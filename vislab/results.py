@@ -277,7 +277,7 @@ def multiclass_metrics_feat_comparison(
         print('*' * 20 + feature + '*' * 20)
         feat_metrics[feature] = multiclass_metrics(
             mc_pred_df, pred_prefix, balanced, random_preds,
-            with_plot, with_print)
+            with_plot, with_print, feature_name=feature)
 
     all_metrics = {'feat_metrics': feat_metrics}
 
@@ -312,7 +312,7 @@ def multiclass_metrics_feat_comparison(
 
 def multiclass_metrics(
         mc_pred_df, pred_prefix, balanced=True, random_preds=False,
-        with_plot=False, with_print=False, min_pos=20):
+        with_plot=False, with_print=False, min_pos=20, feature_name='', seed=42):
     """
     Multiclass classification metrics for a single set of predictions.
 
@@ -334,6 +334,8 @@ def multiclass_metrics(
         If True, print the metrics.
     min_pos: int [20]
         Minimum number of positive examples needed to evaluate metrics.
+
+    feature_name: just for debug purposes
     """
     metrics = {}
 
@@ -362,6 +364,7 @@ def multiclass_metrics(
     pred_df = pred_df[ind]
 
     assert np.all(label_df.sum(1) > 0)
+    assert np.all(label_df.sum(1) == 1)
 
     # Get vector of multi-class labels.
     # This deals with multiple things being true by picking just one.
@@ -369,13 +372,16 @@ def multiclass_metrics(
     # NOTE: if random is unseeded, this can lead to slight change in
     # printed numbers, as different bases of support are used.
     y_true = []
+    np.random.seed(seed)
     for row in label_df.values:
         ind = np.where(row)[0]
         y_true.append(ind[np.random.randint(len(ind))])
+        # y_true.append(ind[0])
     y_true = np.array(y_true)
 
     # Balance the labels.
     if balanced:
+        np.random.seed(seed)
         counts = label_df.sum(0).astype(int)
         min_count = counts[counts.argmin()] + 1
         permutation = lambda N, K: np.random.permutation(N)[:K]
@@ -386,6 +392,7 @@ def multiclass_metrics(
         y_true = y_true[selected_ind]
         pred_df = pred_df.iloc[selected_ind]
         label_df = label_df.iloc[selected_ind]
+        # np.save('/export/home/asanakoy/workspace/wikiart/karayev/test_balanced.npy', label_df.index.values)
 
     if random_preds:
         np.random.seed(None)
@@ -471,6 +478,7 @@ def multiclass_metrics(
 
     # Print report.
     if with_print:
+        print 'Multiclass metrics'
         name = '{} balanced' if balanced else '{}'
         print_metrics(metrics, name)
 

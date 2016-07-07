@@ -97,6 +97,7 @@ def get_artist_df(min_positive_examples=200, force=False):
 
 def _get_column_label_df(
         df, column_name, min_positive_examples=500):
+    # WARNING: Probably need to use column_name here!!!!
     bool_df = vislab.dataset.get_bool_df(
         df, 'style', min_positive_examples)
     bool_df['_split'] = vislab.dataset.get_train_test_split(bool_df)

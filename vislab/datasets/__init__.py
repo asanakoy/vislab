@@ -21,6 +21,9 @@ DATASETS = {
     'wikipaintings_artist': {
         'fn': wikipaintings.get_artist_df
     },
+    'wikipaintings_all': {
+        'fn': wikipaintings.get_df
+    },
     'pinterest_80k': {
         'fn': pinterest.get_pins_80k_df
     },

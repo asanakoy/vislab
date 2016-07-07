@@ -27,6 +27,7 @@
         "mongo": ["0.0.0.0", 27017],
         "redis": ["0.0.0.0", 6379],
         "redis_exclude": "orange6"
-    }
+    },
+    "gzcat" : "gzcat"
 }
 

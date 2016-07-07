@@ -8,6 +8,7 @@ import os
 import pandas as pd
 import sklearn.grid_search
 import vislab.util
+import vislab
 
 vw_cmd = "vw --quiet --compressed"
 
@@ -134,7 +135,8 @@ def _cache_cmd(
     for f in feat_filenames:
         assert(os.path.exists(f))
     cats = [
-        '<(gzcat {})'.format(f) if f.endswith('.gz') else '<(cat {})'.format(f)
+        '<({} {})'.format(vislab.config['gzcat'], f) if f.endswith('.gz')
+        else '<(cat {})'.format(f)
         for f in feat_filenames
     ]
     paste_cmd = "paste -d'\\0' {}".format(' '.join(cats))
@@ -172,8 +174,8 @@ def _get_feat_filenames(feat_names, feat_dirname):
         elif os.path.exists(normal_name):
             feat_filenames.append(normal_name)
         else:
-            raise Exception("Feature filename not found for '{}'".format(
-                feat_name))
+            raise Exception("Feature filename not found for '{} ({})'".format(
+                feat_name, normal_name))
     return feat_filenames
 
 

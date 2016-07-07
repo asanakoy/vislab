@@ -24,6 +24,12 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
             not force):
         results_df = pd.read_pickle(results_df_filename)
         preds_panel = pd.read_pickle(preds_panel_filename)
+
+        pred_columns = [col for col in preds_panel if col.startswith('pred_')]
+        for col in pred_columns:
+            # Convert predictions to numeric. (Could be stored as objects by Karayev)
+            preds_panel[col] = preds_panel[col].apply(pd.to_numeric, errors='raise')
+
         print("Loaded from cache: {} records".format(results_df.shape[0]))
         return results_df, preds_panel
 
@@ -44,7 +50,7 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
     # And of the task performed.
     df['full_task'] = df.apply(lambda x: '{} {}'.format(x['task'], x['data']), axis=1)
 
-    df = df.drop_duplicates(cols=['features_str', 'full_task'], take_last=True)
+    df = df.drop_duplicates(subset=['features_str', 'full_task'], keep='last')
 
     # Just for printing, if needed.
     df = df.sort(['full_task', 'setting'])
@@ -66,7 +72,7 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
             # Not sure why there should ever be duplicate indices, but
             # there are for one of the wikipaintings results...
             pred_df['__index'] = pred_df.index
-            pred_df.drop_duplicates(cols='__index', take_last=True, inplace=True)
+            pred_df.drop_duplicates(subset='__index', keep='last', inplace=True)
             del pred_df['__index']
 
             data[setting] = pred_df
