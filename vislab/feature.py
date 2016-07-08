@@ -21,6 +21,7 @@ import vislab.feature
 
 DB_NAME = 'vislab_feats'
 
+# 'mem' and 'cpus_per_task' parameters are not used now (only for Berkley cluster)
 FEATURES = {
     # does not look at image at all:
     'noise': {

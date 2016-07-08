@@ -116,6 +116,7 @@ def map_through_rq(
             time.sleep(np.random.rand())  # stagger the jobs a little bit
             pids.append(subprocess.Popen(shlex.split(cmd),
                         stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+            # To debug failing jobs it is usefull to print stderr and stdout
 
         # Wait until all jobs are completed.
         t = time.time()
