@@ -96,19 +96,20 @@ def map_through_rq(
         # Otherwise, launch in background.
         print("Starting {} workers...".format(num_workers))
         cmd = "rqworker --burst {}".format(name)
-        if util.running_on_icsi():
-            host, port = vislab.config['servers']['redis']
-            job_log_dirname = util.makedirs(
-                vislab.config['paths']['shared_data'] + '/rqworkers')
-            cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
-                cpus_per_task, mem)
-            cmd += " --time={} --output={}/{}_%j-out.txt".format(
-                max_time, job_log_dirname, name)
-            if len(vislab.config['servers']['redis_exclude']) > 0:
-                cmd += " --exclude={}".format(
-                    vislab.config['servers']['redis_exclude'])
-            cmd += " rqworker --host {} --port {} --burst {}".format(
-                host, port, name)
+        # if util.running_on_icsi():
+        #     print 'RUNNING ON ICSI!'
+        #     host, port = vislab.config['servers']['redis']
+        #     job_log_dirname = util.makedirs(
+        #         vislab.config['paths']['shared_data'] + '/rqworkers')
+        #     cmd = "srun -p vision --cpus-per-task={} --mem={}".format(
+        #         cpus_per_task, mem)
+        #     cmd += " --time={} --output={}/{}_%j-out.txt".format(
+        #         max_time, job_log_dirname, name)
+        #     if len(vislab.config['servers']['redis_exclude']) > 0:
+        #         cmd += " --exclude={}".format(
+        #             vislab.config['servers']['redis_exclude'])
+        #     cmd += " rqworker --host {} --port {} --burst {}".format(
+        #         host, port, name)
         print(cmd)
         pids = []
         for i in range(num_workers):
