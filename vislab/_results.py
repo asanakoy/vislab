@@ -13,23 +13,24 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
     if not os.path.exists(cache_dirname):
         vislab.util.makedirs(cache_dirname)
 
+    def pred_columns_to_numeric(preds_panel):
+        pred_columns = [col for col in preds_panel if col.startswith('pred_')]
+        for col in pred_columns:
+            # Convert predictions to numeric. (Could be stored as objects by Karayev)
+            preds_panel[col] = preds_panel[col].apply(pd.to_numeric, errors='raise')
+        return preds_panel
+
     results_df_filename = os.path.join(
         cache_dirname, '{}_results_df.pickle'.format(collection_name))
     preds_panel_filename = os.path.join(
         cache_dirname, '{}_preds_panel.pickle'.format(collection_name))
 
     # If cache exists, load and return.
-    if (os.path.exists(results_df_filename) and
-            os.path.exists(preds_panel_filename) and
+    if (os.path.exists(results_df_filename) and os.path.exists(preds_panel_filename) and
             not force):
         results_df = pd.read_pickle(results_df_filename)
         preds_panel = pd.read_pickle(preds_panel_filename)
-
-        pred_columns = [col for col in preds_panel if col.startswith('pred_')]
-        for col in pred_columns:
-            # Convert predictions to numeric. (Could be stored as objects by Karayev)
-            preds_panel[col] = preds_panel[col].apply(pd.to_numeric, errors='raise')
-
+        preds_panel = pred_columns_to_numeric(preds_panel)
         print("Loaded from cache: {} records".format(results_df.shape[0]))
         return results_df, preds_panel
 
@@ -45,6 +46,7 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
     df['features_str'] = df['features'].apply(lambda x: ','.join(sorted(x)))
 
     # We need a unique representation of the predictor settings.
+    # TODO : do not append wv for every setting
     df['setting'] = df.apply(lambda x: '{} {} {}'.format(x['features_str'], x['quadratic'], 'vw'), axis=1)
 
     # And of the task performed.
@@ -87,6 +89,7 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
     except KeyError:
         pass
 
+    preds_panel = pred_columns_to_numeric(preds_panel)
     df.to_pickle(results_df_filename)
     preds_panel.to_pickle(preds_panel_filename)
 
