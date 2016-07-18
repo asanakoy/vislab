@@ -7,7 +7,9 @@ TODO:
 and lab_hist
 """
 import os
+import sys
 import numpy as np
+import warnings
 from PIL import Image
 import tempfile
 import subprocess
@@ -17,37 +19,43 @@ import socket
 import glob
 import pandas as pd
 import shutil
+import vislab
 import vislab.image
 
 
-def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
+def caffe(image_ids, image_filenames, layer='fc6', network='alexnet', device_id=0, device='gpu'):
     import caffe
 
     networks = {
         'alexnet': {
             'model_def_file': (
                 str(vislab.config['paths']['caffe'] +
-                    '/examples/imagenet/imagenet_deploy.prototxt')
+                    '/models/bvlc_alexnet/deploy.prototxt')
             ),
             'pretrained_model': (
                 str(vislab.config['paths']['caffe'] +
-                    '/examples/imagenet/caffe_reference_imagenet_model')
+                    '/models/bvlc_alexnet/bvlc_alexnet.caffemodel')
             )
         }
     }
     if network not in networks:
         raise ValueError('Only networks supported: {}'.format(networks.keys()))
 
-    # Initialize the network (takes ~1 s)
+    # TODO: use my implementation!
+    caffe.set_device(device_id)
     net = caffe.Classifier(
         networks[network]['model_def_file'],
         networks[network]['pretrained_model'],
-        mean_file=vislab.config['paths']['caffe'] + '/python/caffe/imagenet/ilsvrc_2012_mean.npy',
-        channel_swap=(2, 1, 0), input_scale=255
+        channel_swap=(2, 1, 0),
+        raw_scale=255,  # because caffe.Classifier will read images in float using caffe.io
+        image_dims=(256, 256, 3)
     )
-    # net = caffe.imagenet.ImageNetClassifier(**networks[network])
-    net.set_phase_test()
-    net.set_mode_cpu()
+    if device == 'gpu':
+        caffe.set_mode_gpu()
+    elif device == 'cpu':
+        caffe.set_mode_cpu()
+    else:
+        raise ValueError('Unknown device for caffe: {}'.format(device))
 
     if layer not in net.blobs.keys():
         raise ValueError('Only layers supported for this network: {}'.format(
@@ -59,10 +67,14 @@ def caffe(image_ids, image_filenames, layer='fc6', network='alexnet'):
         try:
             # First, run the network fully forward by calling predict.
             # Then, for whatever blob we want, max across image crops.
+            # Will use 10 crops ((4 corners + 1 center) * 2 mirrored)
             net.predict([caffe.io.load_image(image_filename)])
             feats.append(net.blobs[layer].data.max(0).flatten())
             good_image_ids.append(image_id)
-        except:
+        except Exception as e:
+            vislab.image.image2jpg(image_filename, image_filename)
+            warnings.warn('Caffe raised exception: {} on image {}'.format(e, image_filename))
+            raise Warning()  # TODO: can be commented
             continue
     return good_image_ids, feats
 
@@ -222,6 +234,14 @@ def mc_bit(image_ids, image_filenames):
         feats.append(pd.read_csv(filename).values.flatten().astype(bool))
 
     if p.returncode != 0 or len(feats) == 0:
+        print 'ERROR_CODE:', p.returncode
+        print 'len(feats):', len(feats)
+        if p.returncode == -15 or len(feats) == 0: 
+            # Error during Metaclass_bin extraction. 
+            # Probably incorrect image format.
+            for fname in image_filenames:
+                fname = os.path.join(input_dirname, fname)
+                vislab.image.image2jpg(fname, fname)
         raise Exception("Something went wrong with running vlg 2")
 
     os.remove(list_filename)

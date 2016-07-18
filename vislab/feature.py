@@ -40,19 +40,19 @@ FEATURES = {
     },
 
     # caffe:
-    'caffe_imagenet': {
+    'alexnet_prob': {
         'fn': functools.partial(vislab.features.caffe, layer='prob'),
-        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
+        'cpus_per_task': 1, 'mem': 3000, 'chunk_size': 256,
     },
 
-    'caffe_fc6': {
+    'alexnet_fc6': {
         'fn': functools.partial(vislab.features.caffe, layer='fc6'),
-        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
+        'cpus_per_task': 1, 'mem': 3000, 'chunk_size': 256,
     },
 
-    'caffe_fc7': {
+    'alexnet_fc7': {
         'fn': functools.partial(vislab.features.caffe, layer='fc7'),
-        'cpus_per_task': 4, 'mem': 3000, 'chunk_size': 30,
+        'cpus_per_task': 1, 'mem': 3000, 'chunk_size': 256,
     },
 
     # matlab:
