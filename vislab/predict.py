@@ -15,6 +15,7 @@ Possible experiments:
 """
 import copy
 import logging
+import warnings
 import pandas as pd
 import numpy as np
 import vislab.utils.cmdline
@@ -229,6 +230,8 @@ def get_multiclass_dataset(
         test_frac=.2, balanced=False, random_seed=42):
     """
     Return a dataset dict for multi-class data.
+    Split data in train, val, test.
+    Val size = Test size.
 
     TODO: support multi-label: stick them all in test.
 
@@ -262,6 +265,9 @@ def get_multiclass_dataset(
 
     # If source_df does not have split info, do the split here.
     if '_split' not in source_df.columns:
+        raise NotImplementedError('Random state will change and get some other val set. '
+                                  'Or even train/test will be different from expected. '
+                                  'Use dataset.get_train_test_split() instead')
         multilabel_ind = np.where(source_df[column_names].sum(1) > 1)[0]
         test_ind = []
         if len(multilabel_ind) > 0:
@@ -296,6 +302,7 @@ def get_multiclass_dataset(
     ids = df.index[np.random.permutation(df.shape[0])]
 
     if balanced:
+        warnings.warn('making balanced validation split')
         # Construct a balanced validation set.
         counts = trainval_df.sum(0).astype(int)
         min_count = counts[counts.argmin()]
