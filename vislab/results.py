@@ -15,14 +15,14 @@ import vislab.dataset_viz
 pred_prefix = 'pred_'
 
 
-def get_balanced_dataset_ind(df_, gt_col):
+def get_balanced_dataset_ind(df_, gt_col, random_seed=0):
     """
     Return integer index of the subset of df_ that has a balanced set of
     True/False values for gt_col.
     """
     pos_ind = np.where(df_[gt_col])[0]
     neg_ind = np.where(np.equal(df_[gt_col], False))[0]
-    np.random.seed(0)
+    np.random.seed(random_seed)
     if pos_ind.shape[0] > neg_ind.shape[0]:
         ind = np.hstack((
             np.random.choice(pos_ind, size=neg_ind.shape[0], replace=False), neg_ind))
@@ -33,8 +33,11 @@ def get_balanced_dataset_ind(df_, gt_col):
 
 
 def pred_accuracy_at_threshold(
-        df_, gt_col, threshold, verbose=False):
+        df_, gt_col, threshold, verbose=False, balanced=True):
     """
+    Calculate accuracy at threshold.
+    [default] For random balanced subset.
+
     TODO: average over several balanced splits.
 
     Parameters
@@ -45,6 +48,8 @@ def pred_accuracy_at_threshold(
         Threshold for positive predictions.
     verbose: boolean
         Print classification report if true.
+    balanced : boolean
+        Should we take a random balanced by binary label subset for accuracy calculation?
 
     Returns
     -------
@@ -52,7 +57,10 @@ def pred_accuracy_at_threshold(
         Accuracy on df_[gt_col] using
         df_[pred_prefix + gt_col] > threshold.
     """
-    ind = get_balanced_dataset_ind(df_, gt_col)
+    if balanced:
+        ind = get_balanced_dataset_ind(df_, gt_col)
+    else:
+        ind = np.arange(len(df_), dtype=int)
     gt = df_[gt_col].values[ind].astype(bool)
     preds = (df_[pred_prefix + gt_col] > threshold).values[ind]
     acc = sklearn.metrics.accuracy_score(gt, preds)
@@ -62,7 +70,9 @@ def pred_accuracy_at_threshold(
 
 
 def learn_accuracy_threshold(
-        df_, gt_col, thresholds=np.logspace(-2, 0, 20) - 1):
+        df_, gt_col,
+        thresholds=np.logspace(-2, 0, 20) - 1,
+        balanced=True):
     """
     Do cross-validation of thresholds for prediction accuracy.
 
@@ -73,6 +83,8 @@ def learn_accuracy_threshold(
     gt_col: string
         Name of the boolean column we care about.
     thresholds: iterable of float
+    balanced : bool
+        Should we take a random balanced by binary label subset for accuracy calculation?
 
     Returns
     -------
@@ -82,7 +94,8 @@ def learn_accuracy_threshold(
     """
     accs = [
         pred_accuracy_at_threshold(
-            df_, gt_col, threshold, verbose=False)
+            df_, gt_col, threshold,
+            verbose=False, balanced=balanced)
         for threshold in thresholds
     ]
     best_threshold = thresholds[np.argmax(accs)]
@@ -90,26 +103,36 @@ def learn_accuracy_threshold(
 
 
 def learn_accuracy_thresholds_for_preds_panel(
-        preds_panel, cache_filename=None):
+        preds_panel, cache_filename=None, force=False, balanced=True):
     """
     Find the positive prediction thresholds that maximize accuracy
     on the validation set for all settings and labels in preds_panel,
     returning a DataFrame of thresholds and a DataFrame of test-set
     accuracies.
 
+    Basically calculates per-class accuracies for every setting.
+
     Parameters
     ----------
     preds_panel: pandas.Panel
         Such as is loaded by
+
+    balanced : boolean
+        For each class: Should we take a random,
+        balanced by binary label, subset for accuracy calculation?
 
     Returns
     -------
     threshold_df: pandas.DataFrame
     acc_df: pandas.DataFrame
     """
-    if cache_filename is not None and os.path.exists(cache_filename):
-        threshold_df = pd.read_hdf(cache_filename, 'threshold_df')
-        acc_df = pd.read_hdf(cache_filename, 'acc_df')
+    # names of the collections containing df in HDF5 cache file
+    threshold_df_name = 'threshold_df' + ('' if balanced else '_nonbalanced')
+    acc_df_name = 'acc_df' + ('' if balanced else '_nonbalanced')
+
+    if cache_filename is not None and os.path.exists(cache_filename) and not force:
+        threshold_df = pd.read_hdf(cache_filename, threshold_df_name)
+        acc_df = pd.read_hdf(cache_filename, acc_df_name)
         return threshold_df, acc_df
 
     thresholds = defaultdict(dict)
@@ -125,12 +148,12 @@ def learn_accuracy_thresholds_for_preds_panel(
 
         for gt_col in gt_cols:
             best_threshold, val_accs = learn_accuracy_threshold(
-                pred_df_val, gt_col)
+                pred_df_val, gt_col, balanced=balanced)
 
             thresholds[setting_name][gt_col] = best_threshold
 
             test_accs[setting_name][gt_col] = pred_accuracy_at_threshold(
-                pred_df_test, gt_col, best_threshold)
+                pred_df_test, gt_col, best_threshold, balanced=balanced)
             sys.stdout.write('.')
         sys.stdout.write('\n')
 
@@ -138,8 +161,8 @@ def learn_accuracy_thresholds_for_preds_panel(
     acc_df = pd.DataFrame(test_accs)
 
     if cache_filename is not None:
-        threshold_df.to_hdf(cache_filename, 'threshold_df', mode='w')
-        acc_df.to_hdf(cache_filename, 'acc_df', mode='a')
+        threshold_df.to_hdf(cache_filename, threshold_df_name, mode='w')
+        acc_df.to_hdf(cache_filename, acc_df_name, mode='a')
 
     return threshold_df, acc_df
 
@@ -177,6 +200,13 @@ def binary_metrics(
         If True, plot curves and return handles to figures (otherwise
         return handles to None).
     with_print: bool
+    -----------
+    Return: dict metrics
+    metrics['auc'] = area under ROC curve
+    metrics['ap'] = average precision on binary task
+    ...
+    all other metrics will be computed using cut-off threshold between classes = 0
+    (not very adequate).
     """
     name = '{} balanced'.format(name) if balanced else name
 
@@ -219,7 +249,10 @@ def binary_metrics(
     metrics['accuracy'] = sklearn.metrics.accuracy_score(
         y_true, y_pred_bin)
 
-    metrics['pr_fig'], prec, rec, metrics['ap'] = \
+    metrics['pr_fig'], \
+    prec, \
+    rec, \
+    metrics['ap'] = \
         get_pr_curve(y_true, y_pred_raw, name, with_plot)
 
     metrics['ap_sklearn'] = sklearn.metrics.average_precision_score(
@@ -392,7 +425,8 @@ def multiclass_metrics(
         y_true = y_true[selected_ind]
         pred_df = pred_df.iloc[selected_ind]
         label_df = label_df.iloc[selected_ind]
-        # np.save('/export/home/asanakoy/workspace/wikiart/karayev/test_balanced.npy', label_df.index.values)
+        # np.save('/export/home/asanakoy/workspace/wikiart/karayev/test_balanced_seed{}.npy'
+        #   .format(seed), label_df.index.values)
 
     if random_preds:
         np.random.seed(None)
@@ -411,6 +445,8 @@ def multiclass_metrics(
         )
         all_binary_metrics[label] = binary_metrics(
             pdf, label, False, False, False)
+    # bin_df will AP, ROC-AUC - adequately
+    # accuracy, mcc and several other metrics for unbalanced binary problem with threshold 0.
     bin_df = pd.DataFrame(all_binary_metrics).T
 
     # Add mean of the numeric metrics.
@@ -440,9 +476,10 @@ def multiclass_metrics(
     metrics['conf_df'] = conf_df
     total = conf_df.sum().sum()
     metrics['conf_df_n'] = conf_df.astype(float) / total
+    # overall accuracy for all classes jointly
     metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
 
-    # P-R-F1-Support table.
+    # multiclass P-R-F1-Support table.
     results = sklearn.metrics.precision_recall_fscore_support(
         y_true, y_pred)
     metrics['results_df'] = pd.DataFrame(
