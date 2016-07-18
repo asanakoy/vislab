@@ -25,10 +25,10 @@ def get_balanced_dataset_ind(df_, gt_col):
     np.random.seed(0)
     if pos_ind.shape[0] > neg_ind.shape[0]:
         ind = np.hstack((
-            np.random.choice(pos_ind, neg_ind.shape[0], False), neg_ind))
+            np.random.choice(pos_ind, size=neg_ind.shape[0], replace=False), neg_ind))
     else:
         ind = np.hstack((
-            pos_ind, np.random.choice(neg_ind, pos_ind.shape[0], False)))
+            pos_ind, np.random.choice(neg_ind, size=pos_ind.shape[0], replace=False)))
     return ind
 
 

@@ -102,7 +102,7 @@ def get_train_test_split(df_, test_frac=0.2, random_seed=42):
     ]).tolist()
 
     # Then add enough of the rest to get to test_frac of total.
-    remaining_ind = df_.index.diff(test_balanced_set).tolist()
+    remaining_ind = df_.index.difference(test_balanced_set).tolist()
     np.random.shuffle(remaining_ind)
     num_test = int(round(N * test_frac))
     num_to_add = num_test - len(test_balanced_set)

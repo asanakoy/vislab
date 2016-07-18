@@ -279,7 +279,7 @@ def get_multiclass_dataset(
     else:
         test_ids = source_df[source_df['_split'] == 'test'].index
 
-    trainval_ids = source_df.index - test_ids
+    trainval_ids = source_df.index.difference(test_ids)
 
     # Split into single-label trainval and possible multi-label test.
     test_df = source_df[column_names].ix[test_ids]
@@ -312,7 +312,7 @@ def get_multiclass_dataset(
     else:
         val_ids = ids[:num_val]
 
-    train_ids = ids.diff(val_ids.tolist())
+    train_ids = ids.difference(val_ids.tolist())
     train_ids = train_ids[np.random.permutation(len(train_ids))]
 
     # Assert that there is no overlap between the sets.

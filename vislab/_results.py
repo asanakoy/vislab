@@ -53,7 +53,7 @@ def load_pred_results(collection_name, cache_dirname, multiclass=False, force=Fa
     df = df.drop_duplicates(subset=['features_str', 'full_task'], keep='last')
 
     # Just for printing, if needed.
-    df = df.sort(['full_task', 'setting'])
+    df = df.sort_values(by=['full_task', 'setting'])
 
     # Get all predictions in a separate panel and drop the pickled ones.
     if multiclass:
