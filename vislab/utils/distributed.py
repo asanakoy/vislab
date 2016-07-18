@@ -1,5 +1,8 @@
+import os
 import rq
 import time
+import datetime
+import socket
 import numpy as np
 import shlex
 import sys
@@ -112,10 +115,20 @@ def map_through_rq(
         #         host, port, name)
         print(cmd)
         pids = []
+        stderr_files = []
+        devnull = open(os.devnull, 'wb')
+        log_dir_name = '{}_{}'.format(socket.gethostname(),
+                                      datetime.datetime.
+                                      fromtimestamp(time.time()).strftime('%Y-%m-%d.%H-%M-%S'))
+        log_dir = os.path.join(vislab.config['paths']['data'], 'redis', log_dir_name)
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
         for i in range(num_workers):
+            f = open(os.path.join(log_dir, 'stderr_{}.txt'.format(i)), 'w')
+            stderr_files.append(f)
             time.sleep(np.random.rand())  # stagger the jobs a little bit
             pids.append(subprocess.Popen(shlex.split(cmd),
-                        stdout=subprocess.PIPE, stderr=subprocess.PIPE))
+                        stdout=devnull, stderr=f))
             # To debug failing jobs it is usefull to print stderr and stdout
 
         # Wait until all jobs are completed.
@@ -140,12 +153,19 @@ def map_through_rq(
             time.sleep(1)
         sys.stdout.write('\n')
         sys.stdout.flush()
+        for f in stderr_files:
+            f.close()
     print('Done with all jobs.')
 
     # Print some statistics about the run.
     failed_jobs = [j for j in fq.get_jobs() if j.origin == name]
     print("{} jobs failed and went into the failed queue.".format(
         len(failed_jobs)))
+    
+    # print '==============================================='
+    # stdout, stderr = pids[0].communicate()
+    # print stderr
+    # print '==============================================='
 
     # If requested, aggregate and return the results.
     if aggregate:
