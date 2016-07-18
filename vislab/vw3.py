@@ -517,7 +517,7 @@ class VW(object):
             self.param_grid['quadratic'] = [quadratic]
         settings_df = pd.DataFrame(
             list(sklearn.grid_search.ParameterGrid(self.param_grid))
-        ).sort(['num_passes', 'loss'])
+        ).sort_values(by=['num_passes', 'loss'])
         self.settings = [dict(row) for ind, row in settings_df.iterrows()]
 
     def fit_and_predict(self, dataset, feat_names, feat_dirname, force=False):
