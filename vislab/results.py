@@ -71,7 +71,8 @@ def pred_accuracy_at_threshold(
 
 def learn_accuracy_threshold(
         df_, gt_col,
-        thresholds=np.logspace(-2, 0, 20) - 1,
+        thresholds=np.hstack((np.linspace(0, 1, num=20), -np.logspace(-2, 0, 20), np.logspace(-2, 0, 20), 1 - np.logspace(-2, 0, 20), np.logspace(-2, 0, 20) - 1)),
+        # thresholds=np.logspace(-2, 0, 20) - 1,
         balanced=True):
     """
     Do cross-validation of thresholds for prediction accuracy.
@@ -477,7 +478,7 @@ def multiclass_metrics(
     total = conf_df.sum().sum()
     metrics['conf_df_n'] = conf_df.astype(float) / total
     # overall accuracy for all classes jointly
-    metrics['accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
+    metrics['overall_accuracy'] = np.diagonal(conf_df).sum().astype(float) / total
 
     # multiclass P-R-F1-Support table.
     results = sklearn.metrics.precision_recall_fscore_support(
@@ -531,7 +532,7 @@ def print_metrics(metrics, name):
         if metric_name == 'results_df':
             print(value.to_string())
         metrics_to_print = [
-            'accuracy', 'mcc', 'ap', 'ap_sklearn'
+            'overall_accuracy', 'mcc', 'ap', 'ap_sklearn'
         ]
         if metric_name in metrics_to_print:
             print('{}: {}'.format(metric_name, value))
@@ -573,8 +574,9 @@ def get_pr_curve(y_true, y_score, title=None, with_plot=True):
     """
     prec, rec, thresh = sklearn.metrics.precision_recall_curve(y_true, y_score)
     # Make sure prec is non-increasing (prec is in reverse order)
-    for i in range(len(prec) - 1):
-        prec[i + 1] = max(prec[i + 1], prec[i])
+    # WARNING: This is not right! Karayev cheated!
+    # for i in range(len(prec) - 1):
+    #     prec[i + 1] = max(prec[i + 1], prec[i])
     ap = np.trapz(-prec, rec)
     fig = None
     if with_plot:
