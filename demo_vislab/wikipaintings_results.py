@@ -21,7 +21,7 @@ import vislab.datasets
 
 DATA_NAME = 'data'
 is_force = True
-is_balanced_test = False
+is_balanced_test = True
 # In[2]:
 
 label_df = vislab.datasets.wikipaintings.get_style_df()
@@ -66,11 +66,12 @@ threshold_df, per_class_acc_df = vislab.results.learn_accuracy_thresholds_for_pr
 per_class_acc_df.index = [_.replace('style_', '') for _ in per_class_acc_df.index]
 per_class_acc_df.columns = [_.replace(' ', '_') for _ in per_class_acc_df.columns]
 # acc_df.sort('MC-bit accuracy')
-
+mean_per_class_acc_df = pd.DataFrame(per_class_acc_df.mean().to_dict(), index=['_mean'])
+per_class_acc_df = per_class_acc_df.append(mean_per_class_acc_df)
 
 # In[7]:
 print '=================================='
-print 'per class Accuracy on random subset'
+print 'per class Accuracy on random binary balanced subset'
 print per_class_acc_df
 # print acc_df.sort('MC-bit accuracy').to_latex()
 
@@ -79,6 +80,10 @@ print per_class_acc_df
 
 feat_to_evaluate = [
     # u'noise None vw',
+    u'rs_balance_iter191268_2_sum_pool None vw',
+    u'rs_balance_iter191268_2_max_pool None vw',
+    u'rs_balance_iter191268 None vw',
+    u'rs_iter131934 None vw',
     u'alexnet_fc6 None vw',
     u'alexnet_fc7 None vw',
     u'alexnet_prob None vw',
@@ -99,6 +104,10 @@ preds_panel = preds_panel.select(lambda x: x in feat_to_evaluate, 'minor')
 # In[9]:
 
 nice_feat_names = {
+    'rs_balance_iter191268 None vw': 'rs_balance_iter191268',
+    'rs_balance_iter191268_2_sum_pool None vw': 'rs_balance_iter191268_2_sum_pool',
+    'rs_balance_iter191268_2_max_pool None vw': 'rs_balance_iter191268_2_max_pool',
+    'rs_iter131934 None vw': 'rs_iter131934',
     'alexnet_fc6 None vw': 'alexnet_FC6',
     'alexnet_fc7 None vw': 'alexnet_FC7',
     'alexnet_prob None vw': 'alexnet_Prob',
@@ -113,8 +122,8 @@ nice_feat_names = {
 
 mc_metrics = vislab.results.multiclass_metrics_feat_comparison(
     preds_panel, label_df, pred_prefix,
-    # features=['caffe_fc7 None vw'] + ['random_{}'.format(i) for i in xrange(2, 7)],
-    features=preds_panel.minor_axis.tolist() + ['random'],
+    # features=['random'],
+    features=preds_panel.minor_axis.tolist(),
     balanced=is_balanced_test, with_plot=False, with_print=True, nice_feat_names=nice_feat_names)
 
 
@@ -142,9 +151,9 @@ if 'noise None vw' in ap_df:
 column_order = ap_df.columns[(-ap_df.ix['_mean']).argsort().values]
 ap_df.index = [x.replace('style_', '') for x in ap_df.index]
 ap_df = ap_df.reindex_axis(column_order, axis=1)
-ap_df.to_csv(vislab.config['paths'][DATA_NAME] + '/results/figures/wikipaintings_ap_df.csv')
-fig = vislab.results_viz.plot_df_bar(ap_df, fontsize=14)
-fig.savefig(vislab.config['paths'][DATA_NAME] + '/results/figures/wikipaintings_ap_barplot.pdf', bbox_inches='tight')
+# ap_df.to_csv(vislab.config['paths'][DATA_NAME] + '/results/figures/wikipaintings_ap_df.csv')
+# fig = vislab.results_viz.plot_df_bar(ap_df, fontsize=14)
+# fig.savefig(vislab.config['paths'][DATA_NAME] + '/results/figures/wikipaintings_ap_barplot.pdf', bbox_inches='tight')
 
 # In[16]:
 
