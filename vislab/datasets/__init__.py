@@ -1,6 +1,7 @@
 import ava
 import flickr
 import wikipaintings
+import wikiart_scraping
 import pinterest
 import pascal
 import behance
@@ -15,7 +16,7 @@ DATASETS = {
     'flickr': {
         'fn': flickr.get_df
     },
-    'wikipaintings': {
+    'wikipaintings_style_karayev': {
         'fn': wikipaintings.get_style_df
     },
     'wikipaintings_artist': {
