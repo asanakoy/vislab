@@ -2,6 +2,7 @@ data
 .ipynb*
 *.pyc
 .idea
+tags
 
 vislab/tests/_temp
 vislab/config.json
