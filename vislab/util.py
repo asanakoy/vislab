@@ -22,11 +22,12 @@ def exclude_ids_in_collection(image_ids, collection):
     computed_image_ids = [
         x['image_id'] for x in collection.find(fields=['image_id'])
     ]
+    print 'len(computed_image_ids)', len(computed_image_ids)
     num_ids = len(image_ids)
-    image_ids = list(set(image_ids) - set(computed_image_ids))
+    not_computed_ids = image_ids = list(set(image_ids) - set(computed_image_ids))
     print("Cut down on {} existing out of {} total image ids.".format(
-        num_ids - len(image_ids), num_ids))
-    return image_ids
+        num_ids - len(not_computed_ids), num_ids))
+    return not_computed_ids
 
 
 def load_or_generate_df(filename, generator_fn, force=False, args=None):
@@ -35,9 +36,11 @@ def load_or_generate_df(filename, generator_fn, force=False, args=None):
     and write to filename.
     If filename does exist, load from it.
     """
+    print 'load_or_generate_df(force={}): {}'.format(force, filename)
     if not force and os.path.exists(filename):
         df = pd.read_hdf(filename, 'df')
     else:
+        print 'Generating'
         df = generator_fn(args)
         df.to_hdf(filename, 'df', mode='w')
     return df
@@ -61,6 +64,12 @@ def get_mongodb_client():
         raise Exception(
             "Need a MongoDB server running on {}, port {}".format(host, port))
     return connection
+
+
+def get_mozila_request_header():
+    user_agent = "Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:47.0) Gecko/20100101 Firefox/47.0"
+    headers = {'User-Agent': user_agent}
+    return headers
 
 
 def print_collection_counts():
