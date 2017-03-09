@@ -285,7 +285,8 @@ def _slugs_to_df(all_slugs, artist_slugs_with_cent_df):
     df['artwork_slug'] = df['artwork_slug'].apply(unidecode)
     df.index = pd.Index(df['image_id'], name='image_id')
 
-    df.join(artist_slugs_with_cent_df, how='left')
+    df = pd.merge(df, artist_slugs_with_cent_df, how='left',
+                  left_on='artist_slug', right_index=True)
     return df
 
 
