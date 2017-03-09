@@ -16,7 +16,7 @@ function [tpr,tnr,info] = vl_roc(labels, scores, varargin)
 %   samples are predicted to be positive, i.e. the constant 0.
 %
 %   Set the zero the lables of samples that should be ignored in the
-%   evaluation. Set to -INF the scores of samples which are not
+%   correct_classified_top1. Set to -INF the scores of samples which are not
 %   retrieved. If there are samples with -INF score, then the ROC curve
 %   may have maximum TPR and TNR smaller than 1.
 %

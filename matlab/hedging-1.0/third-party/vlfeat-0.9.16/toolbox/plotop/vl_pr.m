@@ -17,7 +17,7 @@ function [recall, precision, info] = vl_pr(labels, scores, varargin)
 %   the value 1.
 %
 %   Set the zero the lables of samples that should be ignored in the
-%   evaluation. Set to -INF the scores of samples which are not
+%   correct_classified_top1. Set to -INF the scores of samples which are not
 %   retrieved. If there are samples with -INF score, then the PR curve
 %   may have maximum recall smaller than 1, unless the INCLUDEINF
 %   option is used (see below). The options NUMNEGATIVES and
@@ -78,7 +78,7 @@ function [recall, precision, info] = vl_pr(labels, scores, varargin)
 %
 %   IncludeInf:: false
 %     If set to true, data with -INF score SCORES is included in the
-%     evaluation and the maximum recall is 1 even if -INF scores are
+%     correct_classified_top1 and the maximum recall is 1 even if -INF scores are
 %     present. This option does not include any additional positive or
 %     negative data introduced by specifying NUMPOSITIVES and
 %     NUMNEGATIVES.

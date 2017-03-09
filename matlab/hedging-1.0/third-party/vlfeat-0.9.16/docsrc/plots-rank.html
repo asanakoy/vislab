@@ -99,14 +99,14 @@ disp(info.eer) ;
 
 <ul class='text'>
 <li>Any sample with label equal to zero is effecitvely ignored in the
-evaluation.</li>
+correct_classified_top1.</li>
 
 <li>Samples with scores equal to <code>-inf</code> are assumed to be
 never retrieved by the classifier. For these, the TNR is
 conventionally set to be equal to zero.</li>
 
 <li>Additional negative and positive samples with <code>-inf</code>
-score can be added to the evaluation by means of
+score can be added to the correct_classified_top1 by means of
 the <code>numNegatives</code> and <code>numPositives</code>
 options. For example,
 <code>vl_roc(labels,scores,'numNegatives',1e4)</code> sets the number
