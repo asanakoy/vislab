@@ -18,7 +18,8 @@ def chunk(function, args_list):
 def map_through_rq(
         function, args_list, name='default', aggregate=False,
         num_workers=1, chunk_size=1, cpus_per_task=1, mem=3000,
-        max_time='12:0:0', result_ttl=640, timeout=640, async=True):
+        max_time='12:0:0', result_ttl=640, timeout=640, async=True,
+        host=None, port=None):
     """
     Map function onto args_list by submitting the jobs to a Redis queue,
     and launching background workers to process them.
@@ -55,11 +56,15 @@ def map_through_rq(
         Time that the worker has to respond once it starts a job, in seconds.
     async: boolean [True]
         If False, will run job synchronously in same thread---useful to debug.
+    host: str [None]
+        Redis host. If None will use the value from config.
+    port: int [None]
+        Redis port. If None will use the value from config.
     """
     assert(chunk_size > 0)
 
     # Establish connection to Redis queue.
-    redis_conn = util.get_redis_client()
+    redis_conn = util.get_redis_client(host=host, port=port)
     fq = rq.Queue('failed', connection=redis_conn)
     q = rq.Queue(name, connection=redis_conn, async=async)
 

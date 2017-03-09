@@ -83,8 +83,9 @@ def print_collection_counts():
                 db_name, coll_name, client[db_name][coll_name].count()))
 
 
-def get_redis_client():
-    host, port = vislab.config['servers']['redis']
+def get_redis_client(host=None, port=None):
+    if host is None or port is None:
+        host, port = vislab.config['servers']['redis']
     try:
         connection = redis.Redis(host, port)
         connection.ping()
