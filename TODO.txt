@@ -1,0 +1,4 @@
+1. Rename wikiart dataset name to wikiart_style_karayev
+Everywhere -> in mingodb also
+
+2. Refactor wikipaintings -> wikiart
